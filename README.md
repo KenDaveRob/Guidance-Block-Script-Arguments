@@ -82,7 +82,7 @@ ActionList;type 0;Det_DIST 20;LAUNCH 2
 - Fires two torpedos
 
 ActionList;type 2;Det_DIST 20;GPS:uglydisease #2:-11091.43:2154.46:15634.07;LAUNCH 6
--Sets the fire type to Lock On In Gps Area
--Sets the detonation distance to 20m
--Sets the gps point in the guidances
--Fires six torpedos
+- Sets the fire type to Lock On In Gps Area
+- Sets the detonation distance to 20m
+- Sets the gps point in the guidances
+- Fires six torpedos
