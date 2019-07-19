@@ -1,4 +1,5 @@
 /*
+	Intergrid Torpedo Lockon and Fire
 	Written by uglydisease
 	
 	Special thanks to Alyius for the ray casting logic.
