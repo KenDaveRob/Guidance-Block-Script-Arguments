@@ -14,6 +14,22 @@
 	
 	Single Argument Commands : 
 	TRDM_On or TRDM ON 
+	Turns on the "Target Random Block" option for all Guidance Blocks with the associated GuidanceTag, good for targeting large ships/stations, not so good for small ones. Must b/*
+	Original Code written by : R.U.Sirius
+	https://steamcommunity.com/workshop/filedetails/?id=1408954946
+	Based off code by : Alyius
+	https://steamcommunity.com/workshop/filedetails/?id=1408954946
+	Multi argument code by : uglydisease
+	
+	Torpedo Guidance Control Script
+	
+	Editable Fields :
+	string GuidanceTag =
+	int launchSelectionType = 
+
+	
+	Single Argument Commands : 
+	TRDM_On or TRDM ON 
 	Turns on the "Target Random Block" option for all Guidance Blocks with the associated GuidanceTag, good for targeting large ships/stations, not so good for small ones. Must be set before lock on for it to work.
 
 	TRDM_Off or TRDM OFF
@@ -79,20 +95,80 @@
 	- Fires two torpedos
 	
 	ActionList;type 2;Det_DIST 20;GPS:uglydisease #2:-11091.43:2154.46:15634.07;LAUNCH 6
-	-Sets the fire type to Lock On In Gps Area
-	-Sets the detonation distance to 20m
-	-Sets the gps point in the guidances
-	-Fires six torpedos
+	- Sets the fire type to Lock On In Gps Area
+	- Sets the detonation distance to 20m
+	- Sets the gps point in the guidances
+	- Fires six torpedos
 	
+	Inter-grid Operations :
+	- Receiving 
+		You can send commands to any torpedo block simply by sending your message to "TorpedoGuidancePB"
+		Example : IGC.SendBroadcastMessage("TorpedoGuidancePB", "ActionList;type 3;Det_DIST 20;GPS:uglydisease #1:9122.15:-7181.37:14153.59:;LAUNCH 1");
+	- Sending (Untested; may want to separate this function from the rest of the script)
+		This is meant to communicate with a second torpedo guidance script on the torpedo itself.
+		
+		Example (To redirect an already launched torpedo) : 
+		REMOTE;ActionList;GPS:uglydisease #2:-11091.43:2154.46:15634.07;LAUNCH 1 
+
 	Possible Additions :
 	- Implement timing mechanic between commands
-	- Open to suggestions if any body is interested in adding functionality
+	- Create a remote launch script with built in ray cast to get gps
 */
 
+IMyBroadcastListener listener;
 string GuidanceTag = "Torpedo Payload Guidance"; //Name of the guidance block(s) you wish to control
 int launchSelectionType = 2; //0 = Any, 1 = Closest, 2 = Furtherest
+const string callbackString = "<incoming_broadcast_action>";
+string broadcastLocation = "TorpedoGuidancePB";
 
-public void Main(string argument) {
+public Program() {
+ // May implement an lcd in the future
+ /*
+	var blocks = new List < IMyTerminalBlock > ();
+	GridTerminalSystem.GetBlocksOfType < IMyTextSurface > (blocks, block => (block is IMyTextSurface));
+
+	 for (int i = blocks.Count - 1; i >= 0; i--) {
+	  if (blocks[i] is IMyTextSurface && blocks[i].CustomName.IndexOf(TAG) > -1) {
+	   panel = ((IMyTextSurface) blocks[i]);
+	   break;
+	  }
+	 }
+	 if(panel == null) {
+    		Echo("No panel found with tag " + TAG);
+	 }
+	else {
+		panel.ContentType = ContentType.TEXT_AND_IMAGE;
+	}
+	*/
+
+ // Register this listener for BROADCAST_LOCATION tagged messages
+ listener = IGC.RegisterBroadcastListener(broadcastLocation);
+ // What argument will the PB be run when received one (or more) messages
+ listener.SetMessageCallback(callbackString);
+}
+
+public void Main(string argument, UpdateType updateSource) {
+
+ if (argument == callbackString) {
+  while (listener.HasPendingMessage) {
+   string data;
+
+   // Accept next message pending.
+   MyIGCMessage msg = listener.AcceptMessage();
+
+   try {
+    // msg.Data is 'object'. We try to cast it to a known type.
+    data = (string) msg.Data;
+   } catch (InvalidCastException) {
+    // When we fail, there is not much to do, show error message, and continue.
+    Echo("ERROR : Failed to read communication");
+    continue;
+   }
+
+   // Parse the data to human-readable text ad print it on screen
+   argument = data;
+  }
+ }
  //Block Declarations
  List < IMyRadioAntenna > ant = new List < IMyRadioAntenna > ();
  List < IMyRadioAntenna > gdblocks = new List < IMyRadioAntenna > ();
@@ -125,12 +201,22 @@ public void Main(string argument) {
  /* Multi argument operations 
   *	Written by uglydisease
   */
+  
+  
+ if (argument.ToUpper().StartsWith("REMOTE;")) {
+  IGC.SendBroadcastMessage("TorpedoGuidancePB",
+   argument.Remove("REMOTE;".Length)
+  );
+
+ }
  string[] actionList = null;
  if (argument.ToUpper().StartsWith("ACTIONLIST")) {
   actionList = argument.ToUpper().Split(';');
  }
  bool multiAction = (actionList != null);
  int actions = multiAction ? actionList.Length : 1;
+
+
 
  for (int j = 0; j < actions; j++) {
   string[] parts = null;
@@ -142,6 +228,7 @@ public void Main(string argument) {
    parts = argument.ToUpper().Split(' ');
    if (parts.Length > 1) Echo("ACTION : " + parts[0] + ", " + parts[1]);
   }
+
   // Thanks to Lexx Lord for help with the vector3D formatting
   if (argument.StartsWith("GPS")) {
    Vector3D target;
