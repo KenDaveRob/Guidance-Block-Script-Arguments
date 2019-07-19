@@ -183,7 +183,7 @@ void Main(string arguments, UpdateType updateSource) {
 }
 
 StringBuilder DrawProgressBar(StringBuilder sb, float fontSize, float percent) {
- int total = (int)((1 f / fontSize) * 72) - 2;
+ int total = (int)((1f / fontSize) * 72) - 2;
  int filled = (int) Math.Round(percent / 100 * total);
  sb.Append('[').Append('I', filled).Append('`', total - filled).Append(']');
  return sb;
